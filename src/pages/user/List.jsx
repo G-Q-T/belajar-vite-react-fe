@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { Card, Form, Button, Table, Modal } from "react-bootstrap";
-// import AppModal from "../../components/AppModal";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/Label";
+import { Button } from "@/components/ui/button";
+import AppModal from "../../components/AppModal";
+import { Input } from "@/components/ui/input";
 
 const dataUsers = [
   {
@@ -89,35 +92,41 @@ const ListUser = () => {
 
   return (
     <>
-      <Card className="shadow-sm border-0">
-        <Card.Body>
+      <Card className="shadow-sm border-border p-6">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-xl font-bold">Data user
+            </CardTitle>
+          </div>
+           <Button variant="primary" onClick={handleOpenModal}>
+                Create New User
+              </Button>
+        </CardHeader>
+        <CardContent className="p-0">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <div>
               <h4 className="mb-0 fw-bold">Data User</h4>
             </div>
-            <Button variant="primary" onClick={handleOpenModal}>
-              Create New User
-            </Button>
           </div>
-          <Table responsive hover className="align-middle mb-0">
-            <thead>
+          <table className="w-full text-left text-sm">
+            <thead className="border-y bg-muted/30 text-xs uppercase text-muted-foreground">
               <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th className="px-6 py-3 font-medium">#</th>
+                <th className="px-6 py-3 font-medium">Name</th>
+                <th className="px-6 py-3 font-medium">Email</th>
+                <th className="px-6 py-3 font-medium">Status</th>
+                <th className="px-6 py-3 font-medium">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border">
               {users.length > 0 ? (
                 users.map((user, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
+                  <tr key={index} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-6 whitespace-nowrap">{index + 1}</td>
                     <td>{user.name}</td>
                     <td>{user.email}</td>
                     <td>{user.status}</td>
-                    <td>
+                    <td className="px-4 py-6 text-right whitespace-nowrap">
                       <Button onClick={() => handleEditModal(user)} variant="warning" size="sm" className="me-2">
                         Edit
                       </Button>
@@ -135,8 +144,8 @@ const ListUser = () => {
                 </tr>
               )}
             </tbody>
-          </Table>
-        </Card.Body>
+          </table>
+        </CardContent>
       </Card>
 
       {/* <Modal show={showModal} onHide={handleCloseModal}>
@@ -169,8 +178,26 @@ const ListUser = () => {
         </Modal.Footer>
       </Modal> */}
 
-      {/* <AppModal show={showModal} onClose={handleCloseModal} title={isEdit ? "Edit User" : "Create New User"} onSubmit={handleSubmit} submitLabel={isEdit ? "Save Change" : "Save"}>
-        <Form>
+      <AppModal show={showModal} onClose={handleCloseModal} title={isEdit ? "Edit User" : "Create New User"} onSubmit={handleSubmit} submitLabel={isEdit ? "Save Change" : "Save"}>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Nama</Label>
+            <Input id="name" name="name" required placeholder="masukan nama" value={formData.name} onChange={handleChange}></Input>
+          </div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input id="email" name="email" required placeholder="masukan email" value={formData.email} onChange={handleChange}></Input>
+          </div>
+          <div className="space-y-2">
+            <Label>password</Label>
+            <Input id="password" name="password" type="password" required placeholder="masukan password" value={formData.password} onChange={handleChange}></Input>
+          </div>
+          <div className="space-y2">
+            <Button type="submit" >Klik</Button>
+          </div>
+        </div>
+        <h1>Tess</h1>
+        {/* <Form>
           <Form.Group className="mb-3">
             <Form.Label>Name</Form.Label>
             <Form.Control type="text" name="name" placeholder="Enter your name" required value={formData.name} onChange={handleChange}></Form.Control>
@@ -192,8 +219,8 @@ const ListUser = () => {
               <option value="In Active">Draft</option>
             </Form.Select>
           </Form.Group>
-        </Form>
-      </AppModal> */}
+        </Form> */}
+      </AppModal>
     </>
   );
 };

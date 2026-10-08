@@ -1,10 +1,18 @@
 import { useState } from "react";
+import { AlertCircle } from "lucide-react";
 // import { Form, Button, Container, Card } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Button } from "../../components/ui/button";
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+
+} from "@/components/ui/alert"
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,6 +23,8 @@ export default function Login() {
 
   const [formData, setFormData] = useState(_initialForm);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
 
   const handleChange = (e) => {
     // prev : params
@@ -26,13 +36,34 @@ export default function Login() {
     // setFormData(function(prev){})
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch('http://localhost:3000/api/auth/login', {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData)
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.message || 'Please check your email and password');
+      }
+      localStorage.setItem('', result.data.token);
+      setTimeout(() => {
+
+        navigate("/dashboard");
+      }, 1000);
+    } catch (error) {
+      setErrorMsg(error.message);
+      console.log(error);
+    } finally {
       setIsLoading(false);
-      navigate("/dashboard");
-    }, 1000);
+    }
+
   };
 
   return (
@@ -43,34 +74,52 @@ export default function Login() {
           <h1 className="text-2xl font-bold tracking-tight">Point Of Sales | PPKD JP</h1>
           <p className="text-sm text-muted">Point Of Sales</p>
         </div>
-
         <Card className="shadow-lg border-border p-6">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-lg font-semibold">Sign In your Account</CardTitle>
-            <CardDescription>Enter your credential</CardDescription>
-          </CardHeader>
-
-          <form onSubmit={handleLogin}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Enter your email" required autofocus />
-              </div>
-              <div className="space-y-2">
-                <Label>Password</Label>
-                <Input id="password" name="password" type="password" value={formData.password} onChange={handleChange} placeholder="Enter your password" required />
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3 pt-3">
-              <Button type="submit" className="w-full">
-                {isLoading ? "Please Wait..." : "Sign In"}
-              </Button>
-            </CardFooter>
-          </form>
+          <CardHeader className="space-y-1 pb-4">   </CardHeader>
+          <CardTitle className="text-lg font-semibold">Sign In your Account</CardTitle>
+          <CardDescription>Enter your credential </CardDescription>
+          <CardContent className="space-y-4">
+            {/* Alert hanya muncul jika errorMsg memiliki isi */}
+            {errorMsg && (
+              <Alert variant="destructive" className="flex items-center gap-3 py-3">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <div>
+                  <AlertTitle className="text-sm font-medium leading-none">
+                    Error
+                  </AlertTitle>
+                  <AlertDescription className="text-sm opacity-90 mt-1">
+                    {errorMsg}
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
+            <form onSubmit={handleLogin}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Enter your email" required autofocus />
+                </div>
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <Input id="password" name="password" type="password" value={formData.password} onChange={handleChange} placeholder="Enter your password" required />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-3 pt-3">
+                <Button type="submit" className="w-full">
+                  {isLoading ? "Please Wait..." : "Sign In"}
+                </Button>
+              </CardFooter>
+            </form>
+            {/* {errorMsg && <p className="text-red-800">{errorMsg}</p>} */}
+          </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
-    // <Container
+  );
+}
+      
+      {/*  */}
+      {/* Container
     //   className="d-flex align-items-center
     //      justify-content-center min-vh-100"
     // >
@@ -85,7 +134,7 @@ export default function Login() {
     //             <Form.Control name="email" value={formData.email} onChange={handleChange} type="email" required></Form.Control>
     //           </Form.Group>
     //           {/* SSO : */}
-    //           <Form.Group className="mb-3">
+    {/* //           <Form.Group className="mb-3">
     //             <Form.Label>Password</Form.Label>
     //             <Form.Control name="password" onChange={handleChange} type="password" value={formData.password} required></Form.Control>
     //           </Form.Group>
@@ -94,10 +143,9 @@ export default function Login() {
     //               {isLoading ? "Loading..." : "Sign In"}
     //             </Button>
     //           </Form.Group>
-    //         </Form>
-    //       </Card.Body>
-    //     </Card>
-    //   </div>
-    // </Container>
-  );
-}
+    //         </Form> */}
+    {/* //       </Card.Body> */}
+    {/* //     </Card> */}
+    {/* //   </div>
+    // </Container> */} 
+  
