@@ -1,30 +1,14 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/button";
 import AppModal from "../../components/AppModal";
 import { Input } from "@/components/ui/input";
-
-const dataUsers = [
-  {
-    id: 1,
-    name: "Reza",
-    email: "ribrahim50@gmail.com",
-    password: 12345678,
-  },
-  {
-    id: 2,
-    name: "Budi",
-    email: "budi@gmail.com",
-    password: 12345678,
-  },
-  {
-    id: 3,
-    name: "ani",
-    email: "ani@gmail.com",
-    password: 12345678,
-  },
-];
+import api from "@/services/api.js";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 
 const ListUser = () => {
   const _initForm = {
@@ -32,13 +16,29 @@ const ListUser = () => {
     name: "",
     email: "",
     password: "",
-    status: "Active",
+    is_active: "1", // Ubah default jadi string/number status
   };
 
   const [showModal, setShowModal] = useState(false);
-  const [users, setUsers] = useState(dataUsers);
+  const [users, setUsers] = useState([]); // Pastikan inisialisasi array kosong []
   const [formData, setFormData] = useState(_initForm);
   const [isEdit, setIsEdit] = useState(false);
+
+  // Bagian untuk data user dengan API
+  const fetchUser = async () => {
+    try {
+      const response = await api.get("/user");
+      setUsers(response.data.data || response.data || []);
+    } catch (error) {
+      console.log(error.message);
+    }
+
+  };
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+
 
   const handleOpenModal = () => {
     setShowModal(true);
@@ -47,10 +47,12 @@ const ListUser = () => {
   };
 
   const handleEditModal = (user) => {
-    console.log(user);
     setShowModal(true);
     setIsEdit(true);
-    setFormData(user);
+    setFormData({
+      ...user,
+      is_active: user.is_active !== undefined ? String(user.is_active) : "1", // 
+    });
   };
 
   const handleCloseModal = () => {
@@ -64,30 +66,39 @@ const ListUser = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      is_active: parseInt(formData.is_active),
+    };
 
-    // jika edit data
-    if (isEdit) {
-      setUsers(users.map((user) => (user.id === formData.id ? formData : user)));
-    } else {
-      const newUser = {
-        ...formData,
-        id: Date.now(),
-      };
-
-      setUsers([...users, newUser]);
+    try {
+      if (isEdit) {
+        await api.put(`/user/${formData.id}`, payload);
+      } else {
+        await api.post("/user", payload);
+      }
       setFormData(_initForm);
+      setShowModal(false);
+      fetchUser(); // Ambil ulang data terbaru setelah submit
+    } catch (error) {
+      console.log(error.message);
     }
-    setShowModal(false);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const confirmation = window.confirm("Are you sure want to delete this data?");
     if (confirmation) {
-      setUsers(users.filter((u) => u.id !== id));
+      try {
+        await api.delete(`/user/${id}`);
+        fetchUser();
+      } catch (error) {
+        console.log(error.message);
+      }
     }
-    // filter: users
   };
 
   return (
@@ -95,19 +106,13 @@ const ListUser = () => {
       <Card className="shadow-sm border-border p-6">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="text-xl font-bold">Data user
-            </CardTitle>
+            <CardTitle className="text-xl font-bold">Data user</CardTitle>
           </div>
-           <Button variant="primary" onClick={handleOpenModal}>
-                Create New User
-              </Button>
+          <Button onClick={handleOpenModal}>
+            Create New User
+          </Button>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <div>
-              <h4 className="mb-0 fw-bold">Data User</h4>
-            </div>
-          </div>
           <table className="w-full text-left text-sm">
             <thead className="border-y bg-muted/30 text-xs uppercase text-muted-foreground">
               <tr>
@@ -115,22 +120,27 @@ const ListUser = () => {
                 <th className="px-6 py-3 font-medium">Name</th>
                 <th className="px-6 py-3 font-medium">Email</th>
                 <th className="px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3 font-medium">Action</th>
+                <th className="px-6 py-3 font-medium text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {users.length > 0 ? (
+              {/* Gunakan optional chaining (?.) untuk keamanan ekstra */}
+              {users && users.length > 0 ? (
                 users.map((user, index) => (
-                  <tr key={index} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-4 py-6 whitespace-nowrap">{index + 1}</td>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>{user.status}</td>
-                    <td className="px-4 py-6 text-right whitespace-nowrap">
-                      <Button onClick={() => handleEditModal(user)} variant="warning" size="sm" className="me-2">
+                  <tr key={user.id || index} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
+                    <td className="px-6 py-4">{user.name}</td>
+                    <td className="px-6 py-4">{user.email}</td>
+                    <td className="px-6 py-4">
+                      <span className={`border rounded-sm px-2 py-1 text-white text-xs ${user.is_active === 1 ? "bg-green-700" : "bg-red-700"}`}>
+                        {user.is_active === 1 ? "Active" : "Non-Active"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right whitespace-nowrap">
+                      <Button onClick={() => handleEditModal(user)} variant="default" size="sm" className="me-2">
                         Edit
                       </Button>
-                      <Button onClick={() => handleDelete(user.id)} variant="danger" size="sm" className="me-2">
+                      <Button onClick={() => handleDelete(user.id)} variant="destructive" size="sm">
                         Delete
                       </Button>
                     </td>
@@ -138,7 +148,7 @@ const ListUser = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="text-center py-4 text-muted">
+                  <td colSpan={5} className="text-center py-4 text-muted-foreground">
                     Belum ada data user
                   </td>
                 </tr>
@@ -148,78 +158,46 @@ const ListUser = () => {
         </CardContent>
       </Card>
 
-      {/* <Modal show={showModal} onHide={handleCloseModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Create New User</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control type="text" name="name" placeholder="Enter your name" required value={formData.name} onChange={handleChange}></Form.Control>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control value={formData.email} onChange={handleChange} type="email" name="email" placeholder="Enter your email" required></Form.Control>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control value={formData.password} onChange={handleChange} type="password" name="password" placeholder="Enter your passwod" required></Form.Control>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>
-            Close
-          </Button>
-          <Button type="submit" variant="primary" onClick={handleSubmit}>
-            Save Changes
-          </Button>
-        </Modal.Footer>
-      </Modal> */}
-
-      <AppModal show={showModal} onClose={handleCloseModal} title={isEdit ? "Edit User" : "Create New User"} onSubmit={handleSubmit} submitLabel={isEdit ? "Save Change" : "Save"}>
+      <AppModal
+        show={showModal}
+        onClose={handleCloseModal}
+        title={isEdit ? "Edit User" : "Create New User"}
+        onSubmit={handleSubmit}
+        submitLabel={isEdit ? "Save Change" : "Save"}
+      >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Nama</Label>
-            <Input id="name" name="name" required placeholder="masukan nama" value={formData.name} onChange={handleChange}></Input>
+            <Label>name</Label>
+            <Input id="name" name="name" required placeholder="masukan name" value={formData.name} onChange={handleChange} />
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
-            <Input id="email" name="email" required placeholder="masukan email" value={formData.email} onChange={handleChange}></Input>
+            <Input id="email" name="email" type="email" required placeholder="masukan email" value={formData.email} onChange={handleChange} />
           </div>
           <div className="space-y-2">
-            <Label>password</Label>
-            <Input id="password" name="password" type="password" required placeholder="masukan password" value={formData.password} onChange={handleChange}></Input>
+            <Label>Password</Label>
+            <Input id="password" name="password" type="password" required={isEdit ? false : true} placeholder="masukan password" value={formData.password} onChange={handleChange} />
           </div>
-          <div className="space-y2">
-            <Button type="submit" >Klik</Button>
-          </div>
-        </div>
-        <h1>Tess</h1>
-        {/* <Form>
-          <Form.Group className="mb-3">
-            <Form.Label>Name</Form.Label>
-            <Form.Control type="text" name="name" placeholder="Enter your name" required value={formData.name} onChange={handleChange}></Form.Control>
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Email</Form.Label>
-            <Form.Control value={formData.email} onChange={handleChange} type="email" name="email" placeholder="Enter your email" required></Form.Control>
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Password</Form.Label>
-            <Form.Control value={formData.password} onChange={handleChange} type="password" name="password" placeholder="Enter your passwod" required></Form.Control>
-          </Form.Group>
+          {isEdit ? (
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <select name="is_active" id="is_active" value={formData.is_active}
+                onChange={handleChange}>
+                <option value="1">Active</option>
+                <option value="0">No-Active</option>
+              </select>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Status</Form.Label>
-            <Form.Select name="status" value={formData.status} onChange={handleChange}>
-              <option value="">Select One</option>
-              <option value="Active">Publish</option>
-              <option value="In Active">Draft</option>
-            </Form.Select>
-          </Form.Group>
-        </Form> */}
+              {/* <NativeSelect id="is_active" name="is_active" value={formData.is_active} onChange={handleChange}>
+                <NativeSelectOption value="">Select status</NativeSelectOption>
+                <NativeSelectOption value="1">Active </NativeSelectOption>
+                <NativeSelectOption value="0">Non-Active</NativeSelectOption>
+              </NativeSelect> */}
+            </div>
+          ) : (
+            ""
+          )}
+
+        </div>
       </AppModal>
     </>
   );
