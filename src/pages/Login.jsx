@@ -13,6 +13,7 @@ import {
   AlertTitle,
 
 } from "@/components/ui/alert"
+import api from "@/services/api.js"
 
 export default function Login() {
   const navigate = useNavigate();
@@ -40,23 +41,10 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/auth/login', {
-        method: "POST",
-        headers: {
-          accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData)
-      });
-      const result = await res.json();
-      if (!res.ok) {
-        throw new Error(result.message || 'Please check your email and password');
-      }
-      localStorage.setItem('', result.data.token);
-      setTimeout(() => {
-
-        navigate("/dashboard");
-      }, 1000);
+      const res = await api.post('/auth/login', formData);
+      console.log(res.data)
+      localStorage.setItem("token", res.data);
+      navigate("/dashboard");
     } catch (error) {
       setErrorMsg(error.message);
       console.log(error);
@@ -113,13 +101,13 @@ export default function Login() {
             {/* {errorMsg && <p className="text-red-800">{errorMsg}</p>} */}
           </CardContent>
         </Card>
-        </div>
       </div>
+    </div>
   );
 }
-      
-      {/*  */}
-      {/* Container
+
+{/*  */ }
+{/* Container
     //   className="d-flex align-items-center
     //      justify-content-center min-vh-100"
     // >
@@ -134,7 +122,7 @@ export default function Login() {
     //             <Form.Control name="email" value={formData.email} onChange={handleChange} type="email" required></Form.Control>
     //           </Form.Group>
     //           {/* SSO : */}
-    {/* //           <Form.Group className="mb-3">
+{/* //           <Form.Group className="mb-3">
     //             <Form.Label>Password</Form.Label>
     //             <Form.Control name="password" onChange={handleChange} type="password" value={formData.password} required></Form.Control>
     //           </Form.Group>
@@ -144,8 +132,8 @@ export default function Login() {
     //             </Button>
     //           </Form.Group>
     //         </Form> */}
-    {/* //       </Card.Body> */}
-    {/* //     </Card> */}
-    {/* //   </div>
-    // </Container> */} 
-  
+{/* //       </Card.Body> */ }
+{/* //     </Card> */ }
+{/* //   </div>
+    // </Container> */}
+
